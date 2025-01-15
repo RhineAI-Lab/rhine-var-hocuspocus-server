@@ -1,0 +1,17 @@
+{
+  "name": "rhine-var-hocuspocus-simple-server",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+    "@hocuspocus/server": "^2.15.0",
+    "@hocuspocus/extension-logger": "^2.15.0",
+    "@hocuspocus/extension-sqlite": "^2.15.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.21"
+  },
+  "devDependencies": {
+  }
+}
