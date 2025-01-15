@@ -1,7 +1,8 @@
 import {createPool, Pool} from "mysql2/promise";
 import {fetchPayload, storePayload} from "@hocuspocus/server";
+import {Database as DatabaseExtension} from "@hocuspocus/extension-database";
 
-export default class DatabaseConnector {
+export default class Database {
 
   pool: Pool
 
@@ -13,8 +14,11 @@ export default class DatabaseConnector {
     public password: string,
     public database: string,
   ) {
-    const config = {host, port, user, password, database}
+    let config = {host, port, user, password, database}
     this.pool = createPool(config)
+
+    config.password = '***'
+    console.log('Create database pool with:', config)
   }
 
   async fetch({ documentName }: fetchPayload) {
@@ -46,6 +50,13 @@ export default class DatabaseConnector {
       console.error("Error storing document to MySQL:", error)
       throw error
     }
+  }
+
+  getExtension() {
+    return new DatabaseExtension({
+      fetch: payload => this.fetch(payload),
+      store: payload => this.store(payload),
+    })
   }
 
 }

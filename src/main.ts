@@ -2,10 +2,9 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 import {Server} from "@hocuspocus/server"
 import {Logger} from "@hocuspocus/extension-logger"
-import {Database} from "@hocuspocus/extension-database";
-import DatabaseConnector from "./database-connector";
+import Database from "./database";
 
-const db = new DatabaseConnector(
+const db = new Database(
   process.env.DATABASE_TYPE as string,
   process.env.DATABASE_HOST as string,
   parseInt(process.env.DATABASE_PORT as string),
@@ -19,7 +18,7 @@ const server = Server.configure({
   port: 11600,
   extensions: [
     new Logger(),
-    new Database({ fetch: db.fetch, store: db.store }),
+    db.getExtension(),
   ],
 })
 
