@@ -1,9 +1,13 @@
-import {createPool, Pool} from "mysql2/promise";
-import {fetchPayload, storePayload} from "@hocuspocus/server";
-import {Database as DatabaseExtension} from "@hocuspocus/extension-database";
+import { createPool, Pool, PoolOptions, RowDataPacket } from "mysql2/promise"
+import { fetchPayload, storePayload } from "@hocuspocus/server"
+import { Database as DatabaseExtension } from "@hocuspocus/extension-database"
+
+interface DocumentRow extends RowDataPacket {
+  name: string
+  data: Uint8Array<ArrayBufferLike>
+}
 
 export default class Database {
-
   pool: Pool
 
   constructor(
@@ -14,40 +18,46 @@ export default class Database {
     public password: string,
     public database: string,
   ) {
-    let config = {host, port, user, password, database}
+    const config: PoolOptions = {
+      host,
+      port,
+      user,
+      password,
+      database,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    }
     this.pool = createPool(config)
 
     config.password = '***'
     console.log('Create database pool with:', config)
   }
 
-  async fetch({ documentName }: fetchPayload) {
+  async fetch({ documentName }: fetchPayload): Promise<Uint8Array<ArrayBufferLike> | null> {
     try {
-      const [rows] = await this.pool.execute(
-        "SELECT data FROM documents WHERE name = ? LIMIT 1",
+      const [rows] = await this.pool.execute<DocumentRow[]>(
+        'SELECT data FROM documents WHERE name = ? LIMIT 1',
         [documentName]
-      ) as any
+      )
       if (rows.length === 0) {
         return null
       }
       return rows[0].data
     } catch (error) {
-      console.error("Error fetching document from MySQL:", error)
+      console.error(`Error fetching document "${documentName}" from MySQL:`, error)
       throw error
     }
   }
 
-  async store({ documentName, state }: storePayload){
+  async store({ documentName, state }: storePayload): Promise<void> {
     try {
       await this.pool.execute(
-        `
-      INSERT INTO documents (name, data) VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE data = VALUES(data)
-      `,
+        'INSERT INTO documents (name, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)',
         [documentName, state]
       )
     } catch (error) {
-      console.error("Error storing document to MySQL:", error)
+      console.error(`Error storing document "${documentName}" to MySQL:`, error)
       throw error
     }
   }
@@ -58,6 +68,4 @@ export default class Database {
       store: payload => this.store(payload),
     })
   }
-
 }
-
